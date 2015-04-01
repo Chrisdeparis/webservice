@@ -27,12 +27,12 @@ class Ingredient extends \Library\Controller\Controller {
     *  @return     array
     *
     */
-    public function getingredients() {
+    public function getIngredients() {
 
 
 
 
-        $modelIngredient  = new \Application\Models\Ingredient('localhost');
+        $modelIngredient  = new \Application\Models\Ingredient();
         $res=$modelIngredient->fetchAll();
             
         if( !empty( $res ) ) {
@@ -45,19 +45,23 @@ class Ingredient extends \Library\Controller\Controller {
     }
 
 
-
-    public function insertingredients($params) {
-
+    /**
+     * [insertingredients description]
+     * @param  [type] $params [description]
+     * @return [int]         [l'id de l'ingredient ajouté]
+     */
+    public function insertIngredients($params) {
+        
         unset($params['method']);
 
-        $modelIngredient  = new \Application\Models\Ingredient('localhost');
+        $modelIngredient  = new \Application\Models\Ingredient();
         
         $res=$modelIngredient->insert($params);
-            
-        if( !empty( $res ) ) {
-            return $this->setApiResult( $res);
+            var_dump($res);
+        if(  $res  ) {
+            return $this->setApiResult($modelIngredient->getLast());
         }else{
-            return $this->setApiResult(false, true, "erreur pendant la recuperation des ingredients");
+            return $this->setApiResult(false, true, "erreur pendant l'insertion des ingredients");
         }
 
 
@@ -65,6 +69,41 @@ class Ingredient extends \Library\Controller\Controller {
 
 
 
+    public function updateIngredient($params) {
+        
+        unset($params['method']);
+
+        $modelIngredient  = new \Application\Models\Ingredient();
+
+        
+        $id=$params['id_ingredient'];
+
+        $res=$modelIngredient->update(" `id_ingredient`={$id} ", $params);
+            
+        if(  $res  ) {
+            return $this->setApiResult(true);
+        }else{
+            return $this->setApiResult(false, true, "erreur pendant l'insertion des ingredients");
+        }
+
+
+    }
+
+
+    public function deleteIngredient($params) {
+        
+        unset($params['method']);
+
+        $modelIngredient  = new \Application\Models\Ingredient();
+        
+        $res=$modelIngredient->delete(" `id_ingredient`={$params['id_ingredient']} ");
+            
+        if(  $res  ) {
+            return $this->setApiResult(true);
+        }else{
+            return $this->setApiResult(false, true, "erreur pendant la suppression de l'ingredient");
+        }
+    }
 
 
 

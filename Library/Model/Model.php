@@ -38,9 +38,10 @@ abstract class Model {
      *  @return     void
      *
      */
-    public function __construct($connexionName){
+    public function __construct(){
         $classConnexion = \Library\Model\Connexion::getInstance();
-        $this->database = $classConnexion::getConnexion($connexionName);
+        
+        $this->database = $classConnexion::getConnexion(BDD_HOST);
     }
 
     /**
@@ -297,8 +298,8 @@ abstract class Model {
      */
     public function delete($where) {
         $sql = $this->database->prepare("DELETE FROM `{$this->table}` WHERE $where");
-        $sql->execute();
-        return $this->returnAffectedRowBoolean($sql, true); 
+        return $sql->execute();
+        //return $this->returnAffectedRowBoolean($sql, true); 
     }
 
     /**
@@ -387,6 +388,29 @@ abstract class Model {
     public function getLast(){
         return $this->database->lastInsertId();
     }
+
+
+    /*public function retirerCaractereSpeciaux($chaine){
+        //$chaine = mb_strtolower($chaine, 'UTF-8');
+
+        return str_replace(     '@ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ',
+                                'aAAAAAACEEEEIIIIOOOOOUUUUYaaaaaaceeeeiiiioooooouuuuyy',
+                                $chaine);
+    }*/
+
+    public function retirerCaractereSpeciaux($str, $charset='utf-8'){
+        // echo $str."<br>";
+        $str = htmlentities($str, ENT_NOQUOTES, $charset);
+        // echo $str."<br>";
+        $str = preg_replace('#&([A-za-z])(?:acute|cedil|caron|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
+        // echo $str."<br>";
+        $str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
+        //echo $str."<br>";
+        //$str = preg_replace('#&[^;]+;#', '', $str); // supprime les autres caractères
+    return $str;
+    }
+
+
 
 
 }

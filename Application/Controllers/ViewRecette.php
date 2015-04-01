@@ -31,12 +31,28 @@ class ViewRecette extends \Library\Controller\Controller {
 
 
 
-    /* Naïla */
-    public function getAllViewRecettes() {      //  obtenir toutes les recettes
+    /**
+     * [getAllViewRecettes description]
+     * @param  [array] $param [si param contient un index id_cat,
+     *                        la method ne renvera que les recettes de cette categorie]
+     * @return [json]        [json de recettes]
+     */
+    public function getAllViewRecettes($param) {    //  obtenir toutes les recettes
         
+        //si on cherche a recevoir qu'un les recettes d'une categorie...
+       $where=" 1 ";
+        if(isset($param['id_cat']) && !empty($param['id_cat']) ){
+            $where=" `id_cat`={$param['id_cat']} ";
+            echo "tri selon la categorie";
+        }
+        unset($param['method'], $param['id_cat']);
+
+
+
         var_dump("getAllViewRecettes");
-        $modelViewAllRecette       = new \Application\Models\ViewRecette('localhost');
-        $viewAllRecettes           = $modelViewAllRecette->convEnTab($modelViewAllRecette->fetchAll() );
+        $modelViewAllRecette       = new \Application\Models\ViewRecette();
+        $viewAllRecettes           = $modelViewAllRecette->convEnTab($modelViewAllRecette->fetchAll($where) );
+
         if( empty($viewAllRecettes[0]) ){
              $this->message->addError("Aucune Recette");
         }else{
@@ -44,7 +60,7 @@ class ViewRecette extends \Library\Controller\Controller {
             //var_dump($viewAllRecettes);
 
             //recupere les ingredients
-            $modelVLI     = new \Application\Models\ViewListIngredients('localhost');
+            $modelVLI     = new \Application\Models\ViewListIngredients();
 
             foreach ($viewAllRecettes as $key => $viewRecette) {
 
@@ -53,12 +69,21 @@ class ViewRecette extends \Library\Controller\Controller {
             }
 
             //recupere les produits
-            $modelVLP     = new \Application\Models\ViewListProduits('localhost');
+            $modelVLP     = new \Application\Models\ViewListProduits();
 
             foreach ($viewAllRecettes as $key => $viewRecette) {
 
                 $viewLP       = $modelVLP->convEnTab( $modelVLP->fetchAll(" `id_recette`={$viewRecette['id_recette']}")) ;
-                $viewAllRecettes[$key]['produits']=$viewLP;
+                $viewAllRecettes[$key]['produits'] = $viewLP;
+            }
+
+            //recupere les produits
+            $modelVC     = new \Application\Models\ViewCommentaire();
+
+            foreach ($viewAllRecettes as $key => $viewRecette) {
+
+                $viewC       = $modelVC->convEnTab( $modelVC->fetchAll(" `id_recette`={$viewRecette['id_recette']}")) ;
+                $viewAllRecettes[$key]['commentaires'] = $viewC;
             }
 
         }
@@ -74,44 +99,55 @@ class ViewRecette extends \Library\Controller\Controller {
         $param            = (empty($param["id_recette"]))? null : ($param["id_recette"]+0);
 
         //recupere la recette
-        $modelViewRecette = new \Application\Models\ViewRecette('localhost');
-        //$param            = (int) $param;
+        $modelViewRecette = new \Application\Models\ViewRecette();
         $viewRecette      = $modelViewRecette->convEnTab($modelViewRecette->findByPrimary($param));
-        $viewRecetteIP    = $viewRecette[0];
+        $viewRecetteIPC    = $viewRecette[0];
         if( empty($viewRecette[0]) ){
             return $this->setApiResult(false, true, "Aucune recette pour cet id !");
         }
 
         //recupere les ingredients
-        $modelVLI     = new \Application\Models\ViewListIngredients('localhost');
-        $viewLI       = $modelVLI->convEnTab( $modelVLI->fetchAll(" `id_recette`={$viewRecetteIP['id_recette']}"));
-        var_dump($viewLI);
+        $modelVLI     = new \Application\Models\ViewListIngredients();
+        $viewLI       = $modelVLI->convEnTab( $modelVLI->fetchAll(" `id_recette`={$viewRecetteIPC['id_recette']}"));
 
         if( empty($viewLI) ){
-            return $this->setApiResult($viewRecetteIP);
+            $viewRecetteIPC['ingredients'] = '';
+            //return $this->setApiResult($viewRecetteIPC);
         }else{
             //colle les ingredients à la recette
-            $viewRecetteIP['ingredients'] = $viewLI;
+            $viewRecetteIPC['ingredients'] = $viewLI;
         }
 
         //recupere les produits
-        $modelVLP     = new \Application\Models\ViewListIngredients('localhost');
-        $viewLP       = $modelVLI->convEnTab( $modelVLP->fetchAll(" `id_recette`={$viewRecetteIP['id_recette']}"));
-        //$viewLI = $viewLI;
-        
+        $modelVLP     = new \Application\Models\ViewListProduits();
+        $viewLP       = $modelVLI->convEnTab( $modelVLP->fetchAll(" `id_recette`={$viewRecetteIPC['id_recette']}"));
 
         if( empty($viewLP) ){
-            return $this->setApiResult($viewRecetteI);
+            $viewRecetteIPC['produits'] = '';
+            //return $this->setApiResult($viewRecetteIPC);
         }else{
             //colle les produits à la recette
-            $viewRecetteIP['produits'] = $viewLP;
+            $viewRecetteIPC['produits'] = $viewLP;
+        }
+
+        //recupere les commentairess
+        $modelVC    = new \Application\Models\ViewCommentaire();
+        $viewC       = $modelVC->convEnTab( $modelVC->fetchAll(" `id_recette`={$viewRecetteIPC['id_recette']}"));
+        
+
+        if( empty($viewC) ){
+            $viewRecetteIPC['commentaires'] = '';
+            //return $this->setApiResult($viewRecetteIPC);
+        }else{
+            //colle les produits à la recette
+            $viewRecetteIPC['commentaires'] = $viewC;
         }
 
 
 
         //return $this->setApiResult($viewRecetteI);
 
-        return $this->setApiResult($viewRecetteIP);
+        return $this->setApiResult($viewRecetteIPC);
     }
 }
 

@@ -27,10 +27,10 @@ class Commentaire extends \Library\Controller\Controller {
      *  @return     array
      * 
      */
-    public function getcommentaires($params) {      //  obtenir tout les commentaires
+    public function getCommentaires($params) {      //  obtenir tout les commentaires
         
         
-        $modelCommentaire   = new \Application\Models\Commentaire('localhost');
+        $modelCommentaire   = new \Application\Models\Commentaire();
         $commentaires       = $modelCommentaire->convEnTab( $modelCommentaire->fetchAll(" `id_recette`='{$params['id_recette']}' " ) );
 
         if( empty($commentaires) ){
@@ -39,6 +39,34 @@ class Commentaire extends \Library\Controller\Controller {
 
         return $this->setApiResult($commentaires);
     }
+
+
+    /**
+     * [getCommentaire obtenir un commentaire]
+     * @param  [type] $params [description]
+     * @return [type]         [description]
+     */
+    public function getCommentaire($params) {
+        
+        
+        $modelCommentaire   = new \Application\Models\Commentaire();
+        $commentaire       = $modelCommentaire->convEnTab( $modelCommentaire->fetchAll(" `id_com`='{$params['id_com']}' " ) );
+
+        if( empty($commentaire) ){
+            return $this->setApiResult(false, true, "Erreur ou aucun commentaire pour cette recette");
+        }
+
+        return $this->setApiResult($commentaire);
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      *  Méthode post($params)
@@ -49,14 +77,15 @@ class Commentaire extends \Library\Controller\Controller {
      *  @return     array
      *
      */
-    public function insertcommentaire($params) {         //ajouter un commentaire
+    public function insertCommentaire($params) {         //ajouter un commentaire
 
 
         unset($params['method']);
 
-        $modelCommentaire  = new \Application\Models\Commentaire('localhost');
-
-        if($modelCommentaire->insert($params) ) {
+        $modelCommentaire  = new \Application\Models\Commentaire();
+        $res=$modelCommentaire->insert($params);
+        //var_dump($res);
+        if($res ) {
             return $this->setApiResult($modelCommentaire->getLast());   //retourne l'id du comm
         }else{
             return $this->setApiResult(0, true, "erreur pendant l'ajout");
@@ -74,13 +103,13 @@ class Commentaire extends \Library\Controller\Controller {
      *  @return     array
      *
      */
-    public function updatecommentaire($params) {         //ajouter un commentaire
+    public function updateCommentaire($params) {         //ajouter un commentaire
 
 
         unset($params['method']);
 
         
-        $modelCommentaire  = new \Application\Models\Commentaire('localhost');
+        $modelCommentaire  = new \Application\Models\Commentaire();
 
         if($modelCommentaire->update(" `id_commentaire`='{$params['id_commentaire']}' ", $params) ) {
             return $this->setApiResult(true);
@@ -102,12 +131,12 @@ class Commentaire extends \Library\Controller\Controller {
      *  @return     array
      *
      */
-    public function deletecommentaire($params) {         //delete une commentaire
+    public function deleteCommentaire($params) {         //delete une commentaire
 
 
         unset($params['method']);
 
-        $modelComm  = new \Application\Models\Commentaire('localhost');
+        $modelComm  = new \Application\Models\Commentaire();
 
 
         if($modelLI->delete(" `id_commentaire`='{$params['id_commentaire']}' ") ) {

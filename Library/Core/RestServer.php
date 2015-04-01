@@ -52,6 +52,7 @@ class RestServer {
 	 */
 	private $json;
 
+	private $sendMode;
 
 	/**
 	 * 	Méthode __construct()
@@ -78,9 +79,11 @@ class RestServer {
 		$this->json->serverErrorMessage = "";
 		$this->json->page = "";		//supprimer header dans ce string
 		$this->json->error=false;
+		$this->sendMode='json';
 
 		$this->httpMethod = strtoupper($_SERVER["REQUEST_METHOD"]);		//non merci
 		
+
 
 		//$this->clientUserAgent = $_SERVER['HTTP_USER_AGENT'];
 		//$this->clientHttpAccept = $_SERVER["HTTP_ACCEPT"];
@@ -96,12 +99,34 @@ class RestServer {
 			default 		: $this->showError("HTTP Method `".$this->httpMethod."` not found or allowed");
 		}
 
-		if(isset($D["service"])){	//pk
+
+
+
+
+		if(isset($D["service"])){
 			
-			$this->service = "\Application\Controllers\\".ucfirst(strtolower($D["service"]));
 			
-			if(file_exists(APP_ROOT."\Controllers\\".ucfirst(strtolower($D["service"])).".php")) {
+			//$str= ucfirst(strtolower($D["service"]));
+			$str= $D["service"];
+			
+			$this->service = "/Application/Controllers/".$str;
+			
+			
+			
+			
+
+			
+			$str=APP_ROOT."Controllers/".$str.".php";
+
+			
+			
+			if(file_exists($str) ) {
+
+
+				$this->service= str_replace('/', '\\', $this->service );;
+
 				$strService=$this->service;
+
 				$this->service = new $this->service();	//contient le controleur concerné. exemple :Recette
 
 			}
@@ -111,7 +136,7 @@ class RestServer {
 
 			
 			$this->classMethod = strtolower($D["method"]);	//string de la methode de la classe. exemple: getrecettes
-			
+			//echo $this->classMethod."<=====methode<br>";
 			if(!method_exists($this->service, $this->classMethod)){
 				$this->showError("Class method " . $strService . "::". $this->classMethod . " not found");
 			}
@@ -121,7 +146,7 @@ class RestServer {
 			}
 
 			unset($D["service"]);
-			$this->requestParam = $D;
+			$this->requestParam = $D; 
 
 			
 
@@ -155,10 +180,12 @@ class RestServer {
 	 *
 	 */
 	public function handle(){
+		
 		$result = call_user_func(array($this->service, $this->classMethod), $this->requestParam);
 		$this->json->response 			= $result->response;
 		$this->json->apiError 			= $result->apiError;
 		$this->json->apiErrorMessage 	= $result->apiErrorMessage;
+		$this->sendMode					= $result->sendMode;
 		//exit;
 	}
 
@@ -183,11 +210,22 @@ class RestServer {
 		$header_size =0;		// curl_getinfo(curl_init(), CURLINFO_HEADER_SIZE);
 		$body = substr(ob_get_contents(), $header_size);
 
-		$this->json->page="<!--div style='backgroung-color:#FF0'--><hr>@@@>>".$body."<<<@@@<hr><!--/div-->";
+		//$this->json->page="<iframe>@@@>>>".$body."<<<@@@</iframe>";
+		$this->json->page="<hr>@@@>>".$body."<<<@@@<hr>";
 		ob_clean();
 
+                       //$this->sendMode='brut';
 
-		echo json_encode($this->json, JSON_PRETTY_PRINT | JSON_NUMERIC_CHECK);
+		if($this->sendMode==='json'){
+			echo json_encode($this->json, JSON_PRETTY_PRINT | JSON_NUMERIC_CHECK);
+		}elseif ($this->sendMode==='brut') {
+			header("Content-type: text/html");
+			echo $body;
+		}elseif ($this->sendMode==='brut+') {
+			header("Content-type: text/html");
+			echo $body;
+			//var_export($this->json);
+		}
 	}
 
 
