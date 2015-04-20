@@ -12,8 +12,11 @@ class RestServer {
 	/**
 	 * id en paramètre
 	 * @var int
-	 */
-	private $id;
+	 *//*
+	private $id;			//qu'est ce qu'tu fout la
+*/
+
+
 	/**
 	 * Nom du service utilisé
 	 * @var string
@@ -55,6 +58,14 @@ class RestServer {
 	private $sendMode;
 
 	/**
+	 * Tableau contenant le service, la methode et le type requis 
+	 * @var array
+	 */
+	private $tabCorrespondance;
+
+	private $modeStrict;
+
+	/**
 	 * 	Méthode __construct()
 	 *
 	 * 	Constructeur par défaut opérant le serveur REST
@@ -81,12 +92,17 @@ class RestServer {
 		$this->json->error=false;
 		$this->sendMode='json';
 
-		$this->httpMethod = strtoupper($_SERVER["REQUEST_METHOD"]);		//non merci
+		$this->httpMethod = strtoupper($_SERVER["REQUEST_METHOD"]);
 		
-
+		$this->modeStrict=false;
+		
+		$this->remplirCorrespondance();
 
 		//$this->clientUserAgent = $_SERVER['HTTP_USER_AGENT'];
 		//$this->clientHttpAccept = $_SERVER["HTTP_ACCEPT"];
+
+
+
 
 		
 		$D = array();
@@ -99,7 +115,7 @@ class RestServer {
 			default 		: $this->showError("HTTP Method `".$this->httpMethod."` not found or allowed");
 		}
 
-
+		
 
 
 
@@ -135,15 +151,33 @@ class RestServer {
 			}
 
 			
-			$this->classMethod = strtolower($D["method"]);	//string de la methode de la classe. exemple: getrecettes
-			//echo $this->classMethod."<=====methode<br>";
+			//$this->classMethod = strtolower($D["method"]);	//string de la methode de la classe. exemple: getrecettes
+			$this->classMethod = $D["method"];	//string de la methode de la classe. exemple: getRecettes
+			
+
+
 			if(!method_exists($this->service, $this->classMethod)){
 				$this->showError("Class method " . $strService . "::". $this->classMethod . " not found");
 			}
 
-			if(isset($D["id_recette"])){
-				$this->id = $D["id_recette"];
+
+
+			//on verifie si la method (GET POST PUT DELETE) correspond à l'action demandée
+			//$this->httpMethod;
+			//$this->classMethod
+			//$strService
+			str_replace('\Application\Controllers\\', '', $strService);
+			
+			if($this->modeStrict && $this->getCorrespondance(str_replace('\Application\Controllers\\', '', $strService), $this->classMethod ) !== $this->httpMethod ){
+				$this->showError("Class method " . $strService . "::". $this->classMethod . " requiert un ".$this->getCorrespondance(str_replace('\Application\Controllers\\', '', $strService), $this->classMethod ) );
 			}
+
+			//wtf
+			/*if(isset($D["id_recette"])){
+				$this->id = $D["id_recette"];
+			}*/
+
+
 
 			unset($D["service"]);
 			$this->requestParam = $D; 
@@ -216,20 +250,26 @@ class RestServer {
 			color:green;
 			width:400px;
 			height:400px;
-			overflow:scroll;
+			overflow:auto;
 			'>
 				@@@>>><br />
 			<marquee>web service (:(|)</marquee>
 
 			".$body."<br>
 			<<<@@@<br /><br />
-			by Samyn, Naïla
+			by Samyn, Na&iuml;la
 		</div>";
 		//$this->json->page="<iframe>@@@>>>".$body."<<<@@@</iframe>";
-		$this->json->page="<hr>@@@>>".$body."<<<@@@<hr>";
+		//$this->json->page="<hr>@@@>>".$body."<<<@@@<hr>";
 		ob_clean();
 
-                       //$this->sendMode='brut';
+
+		//ici on force le mode brut
+        // $this->sendMode='brut';
+
+
+
+
 
 		if($this->sendMode==='json'){
 			echo json_encode($this->json, JSON_PRETTY_PRINT | JSON_NUMERIC_CHECK);
@@ -250,5 +290,162 @@ class RestServer {
 	}	
 
 
+	public function remplirCorrespondance(){
+		$tab=array();
+
+		$tab['ViewRecette'] = array(
+			//'service'				=> 'method', 	easter egg
+			'getViewRecette'				=> 'GET',
+			'getAllWiewRecettes'			=> 'GET'
+		);
+		$tab['ViewPanier'] = array(
+			'getViewPanier'					=> 'GET'
+		);
+		$tab['ViewProduit'] = array(
+			'getAllViewProduits'			=> 'GET',
+			'getViewProduit'				=> 'GET'
+		);
+
+		$tab['ViewListProduits'] = array(
+			'getViewListProduitsByProduit' => 'GET',
+			'getViewListProduitsByRecette' => 'GET'
+		);
+		$tab['ViewListIngredients'] = array(
+			'getViewListIngredients' => 'GET'
+		);
+
+		$tab['ViewCommentaire'] = array(
+			'getViewCommentaire' => 'GET'
+		);
+		$tab['ViewCategorie'] = array(
+			'getViewCategorie' => 'GET'
+		);
+		$tab['User'] = array(
+			'authentification'				=> 'GET',
+			'getUser'						=> 'GET',
+			'redefinirPassword'				=> 'POST',
+			'insertUser'					=> 'POST',
+			'updateUser'					=> 'PUT',
+			'deleteUser'					=> 'DELETE'
+		);
+		$tab['Unite'] = array(
+			'getUnites' 	=> 'GET',
+			'insertUnites' 	=> 'POST',
+			'updateUnite' 	=> 'PUT',
+			'deleteUnite' 	=> 'DELETE',
+		);
+		$tab['Recherche'] = array(
+			'getAutoCompletion' 	=> 'GET',
+			'getRecherche'		 	=> 'GET'
+		);
+
+		$tab['Recette'] = array(
+			'getRecettes' 	=> 'GET',
+			'insertRecette' 	=> 'POST',
+			'updateRecette' 	=> 'PUT',
+			'deleteRecette' 	=> 'DELETE',
+		);
+
+		$tab['QuestionSecrete'] = array(
+			'getQuestionSecretes' 		=> 'GET',
+			'getQuestionSecrete' 		=> 'POST',
+			'insertQuestionSecrete' 	=> 'POST',
+			'updateQuestionSecrete' 	=> 'PUT',
+			'deleteQuestionSecrete'		=> 'DELETE'
+		);
+		$tab['Produit'] = array(
+			'getAllProduits' 	=> 'GET',
+			'getProduit' 	=> 'GET',
+			'insertProduit' 	=> 'POST',
+			'updateProduit' 	=> 'PUT',
+			'deleteProduit'	=> 'DELETE',
+			'recupererScriptNewProduit'	=> 'GET',
+			'getImageProduit'	=> 'GET',
+			'envoiImageProduit'	=> 'GET'
+		);
+		$tab['Panier'] = array(
+			'getPanier' 	=> 'GET',
+			'insertPanier' 	=> 'POST',
+			'updatePanier' 	=> 'PUT',
+			'deletePanier' 	=> 'DELETE',
+			'viderPanier'	=> 'DELETE',
+			'getHtmlIconPanier'	=> 'GET',
+			'existeDansPanier'	=> 'GET',
+			'getSommePanier'	=> 'GET'
+		);
+
+
+
+		$tab['Note'] = array(
+			'updateNote' 	=> 'PUT',
+			'getNote' 	=> 'GET',
+			'getMoyenneNote' 	=> 'GET'
+		);
+
+
+
+		$tab['Mail'] = array(
+			'envoyerMail' 	=> 'GET',
+			'testMail' 	=> 'GET',
+			'redefinirPassword' 	=> 'PUT'
+		);
+
+
+
+		$tab['ListIngredients'] = array(
+			'insertListIngredients' 	=> 'POST',
+			'updateListIngredients' 	=> 'PUT'
+		);
+
+
+
+		$tab['Ingredient'] = array(
+			'getIngredients' 	=> 'GET',
+			'insertIngredients' 	=> 'POST',
+			'updateIngredient' 	=> 'PUT',
+			'deleteIngredient' 	=> 'DELETE'
+		);
+
+
+		$tab['Commentaire'] = array(
+			'getCommentaires' 	=> 'GET',
+			'getCommentaire' 	=> 'GET',
+			'insertCommentaire' 	=> 'POST',
+			'updateCommentaire' 	=> 'PUT',
+			'deleteCommentaire' 	=> 'DELETE'
+		);
+
+
+		$tab['Categorie'] = array(
+			'getCategories' 	=> 'GET',
+			'insertCategorie' 	=> 'POST',
+			'updateCategorie' 	=> 'PUT',
+			'deleteCategorie' 	=> 'DELETE',
+			'getImageCategorie' 	=> 'GET',
+			'envoiImageCategorie' 	=> 'PUT'
+		);
+
+
+
+		//var_dump($tab);
+
+		$this->tabCorrespondance= $tab;
+		return true;
+	}
+
+
+
+	public function getCorrespondance( $service, $method ){
+		//echo "<br>".$service."###<br>". $method."###<br>";
+
+		if ( array_key_exists( $service, $this->tabCorrespondance )  ) {
+			if ( array_key_exists( $method, $this->tabCorrespondance[$service] )  ) {
+				return $this->tabCorrespondance[$service][$method];
+			}else return "rien";
+		}else return "rien";
+		
+		
+		
+	}
 
 }
